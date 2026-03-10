@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang                                                      = "en">
+<head>
+<meta charset                                                   = "UTF-8">
+<meta name                                                      = "viewport" content="width=device-width,initial-scale=1.0">
+<title>LocalShore — Vendor Portal</title>
+<link rel                                                       = "preconnect" href="https://fonts.googleapis.com">
+<link href                                                      = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Unbounded:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link rel                                                       = "stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src                                                     = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src                                                     = "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src                                                     = "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue                                                        : #1446A0;--blue-dark:#0D3480;--blue-light:#2D5FD4;--blue-pale:#EEF3FF;
+  --orange                                                      : #F7931E;--orange-dark:#E07A0A;--orange-pale:#FFF5E9;
+  --white                                                       : #FFFFFF;--off:#F8F9FD;--black:#0A0C12;--text:#1A1D2E;
+  --mid                                                         : #5A607A;--border:#E2E6F0;--success:#0EA66B;--error:#E53E3E;
+  --warn                                                        : #D97706;--purple:#7C3AED;--teal:#0097A7;
+  --disp                                                        : Unbounded,Georgia,serif;--body:"Plus Jakarta Sans",system-ui,sans-serif;
+}
+body{font-family                                                : var(--body);background:var(--off);color:var(--text);min-height:100vh;overflow-x:hidden}
+#screen-auth,#screen-dash{display:none}
+#screen-auth.active{display:flex;align-items:stretch;min-height:100vh}
+#screen-dash.active{display:block}
+
+/* AUTH */
+.auth-left{flex                                                 : 1;background:linear-gradient(150deg,var(--blue-dark),var(--blue));padding:56px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 80%,rgba(247,147,30,.14) 0%,transparent 60%);pointer-events:none}
+.grid-bg-auth{position                                          : absolute;inset:0;opacity:.04;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px);background-size:48px 48px}
+.al-logo{font-family                                            : var(--disp);font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin-bottom:48px;position:relative;z-index:1}
+.al-logo .ls{color                                              : #fff}.al-logo .shore{color:var(--orange)}
+.al-logo .tag{font-family                                       : var(--body);font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(247,147,30,.25);border:1px solid rgba(247,147,30,.4);color:#FFB865;padding:3px 9px;border-radius:30px;margin-left:8px;vertical-align:middle}
+.auth-left h2{font-family                                       : var(--disp);font-size:2.2rem;font-weight:900;color:#fff;line-height:1.15;margin-bottom:14px;letter-spacing:-.03em;position:relative;z-index:1}
+.auth-left h2 .hollow{color                                     : transparent;-webkit-text-stroke:2px var(--orange)}
+.auth-left p{font-size                                          : .92rem;color:rgba(255,255,255,.52);line-height:1.78;max-width:340px;position:relative;z-index:1}
+.auth-perks{margin-top                                          : 34px;display:flex;flex-direction:column;gap:13px;position:relative;z-index:1}
+.aperk{display                                                  : flex;align-items:center;gap:12px}
+.ap-dot{width                                                   : 8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0;box-shadow:0 0 8px rgba(247,147,30,.5)}
+.aperk span{font-size                                           : .85rem;color:rgba(255,255,255,.6);font-weight:500}
+.auth-stats{display                                             : flex;gap:28px;margin-top:48px;padding-top:28px;border-top:1px solid rgba(255,255,255,.1);position:relative;z-index:1}
+.ast-v{font-family                                              : var(--disp);font-size:1.5rem;font-weight:800;color:#fff}.ast-v span{color:var(--orange)}
+.ast-l{font-size                                                : .7rem;color:rgba(255,255,255,.38);margin-top:2px}
+.auth-right{width                                               : 480px;background:var(--white);display:flex;align-items:center;justify-content:center;padding:48px 52px;position:relative}
+.auth-form{width                                                : 100%}
+.auth-ttl{font-family                                           : var(--disp);font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-bottom:3px}
+.auth-sub{font-size                                             : .84rem;color:var(--mid);margin-bottom:28px;line-height:1.5}
+.atabs{display                                                  : flex;background:var(--off);border-radius:12px;padding:4px;gap:4px;margin-bottom:24px}
+.atab{flex                                                      : 1;padding:10px;text-align:center;border:none;background:none;font-family:var(--body);font-size:.84rem;font-weight:600;color:var(--mid);border-radius:9px;cursor:pointer;transition:all .2s}
+.atab.active{background                                         : var(--white);color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.09)}
+.fg{display                                                     : flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.fl{font-size                                                   : .73rem;font-weight:700;color:var(--mid);letter-spacing:.04em}
+.fi{padding                                                     : 12px 14px;border:1.5px solid var(--border);border-radius:11px;font-family:var(--body);font-size:.88rem;color:var(--text);background:var(--white);outline:none;transition:border-color .18s,box-shadow .18s;width:100%}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(20,70,160,.1)}
+.btn-submit{width                                               : 100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:11px;font-family:var(--disp);font-size:.9rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:4px;letter-spacing:-.01em}
+.btn-submit:hover{background:var(--blue-light);transform:translateY(-1px);box-shadow:0 6px 22px rgba(20,70,160,.32)}
+.amsg{padding                                                   : 10px 14px;border-radius:10px;font-size:.8rem;font-weight:600;display:none;margin-bottom:10px}
+.amsg.show{display                                              : block}
+.amsg.err{background                                            : #FEF2F2;border:1px solid #FECACA;color:var(--error)}
+.amsg.ok{background                                             : #F0FDF4;border:1px solid #BBF7D0;color:var(--success)}
+.auth-footer{position                                           : absolute;bottom:24px;left:0;right:0;text-align:center;font-size:.7rem;color:var(--mid)}
+
+/* DASHBOARD */
+.topbar{height                                                  : 62px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:0 2px 14px rgba(20,70,160,.05)}
+.tb-logo{font-family                                            : var(--disp);font-size:1rem;font-weight:800;letter-spacing:-.02em}
+.tb-logo .ls{color                                              : var(--blue)}.tb-logo .shore{color:var(--orange)}
+.tb-logo .vtag{font-family                                      : var(--body);font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--orange);color:#fff;padding:2px 8px;border-radius:30px;margin-left:5px;vertical-align:middle}
+.tb-right{display                                               : flex;align-items:center;gap:10px}
+.vchip{display                                                  : flex;align-items:center;gap:7px;background:var(--off);border:1px solid var(--border);border-radius:30px;padding:4px 13px 4px 4px}
+.vc-av{width                                                    : 28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--disp);font-weight:800;font-size:.78rem}
+.vc-n{font-size                                                 : .8rem;font-weight:600}
+.btn-logout{padding                                             : 6px 14px;background:none;border:1.5px solid var(--border);border-radius:30px;font-family:var(--body);font-size:.75rem;font-weight:600;color:var(--mid);cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:var(--error);color:var(--error)}
+.dash-layout{display                                            : grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 62px)}
+.sidebar{background                                             : var(--white);border-right:1px solid var(--border);padding:18px 10px;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto}
+.sb-sec{font-size                                               : .62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);padding:13px 9px 5px}
+.sb-item{display                                                : flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;cursor:pointer;border:none;background:none;font-family:var(--body);font-size:.84rem;font-weight:500;color:var(--mid);width:100%;text-align:left;transition:all .2s}
+.sb-item:hover{background:var(--blue-pale);color:var(--blue-dark)}
+.sb-item.active{background                                      : var(--blue-pale);color:var(--blue);font-weight:700}
+.sb-item .si{font-size                                          : .9rem;width:17px;text-align:center}
+.panels{flex                                                    : 1}
+.panel{display                                                  : none;padding:28px}
+.panel.active{display                                           : block}
+.ph{margin-bottom                                               : 24px}
+.ph-title{font-family                                           : var(--disp);font-size:1.22rem;font-weight:800;letter-spacing:-.03em;margin-bottom:3px}
+.ph-sub{font-size                                               : .83rem;color:var(--mid)}
+.card{background                                                : var(--white);border:1.5px solid var(--border);border-radius:18px;padding:24px;margin-bottom:18px}
+.card-title{font-family                                         : var(--disp);font-size:.9rem;font-weight:800;letter-spacing:-.02em;margin-bottom:18px;display:flex;align-items:center;gap:7px}
+.stat-row{display                                               : grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background                                           : var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px;transition:all .2s}
+.stat-card:hover{border-color:var(--blue);box-shadow:0 4px 18px rgba(20,70,160,.08)}
+.sc-ic{font-size                                                : 1.3rem;margin-bottom:9px}
+.sc-v{font-family                                               : var(--disp);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+.sc-l{font-size                                                 : .7rem;color:var(--mid);margin-top:3px;font-weight:500}
+.form-row{display                                               : grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn-blue{padding                                               : 10px 22px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:var(--disp);font-size:.85rem;font-weight:800;cursor:pointer;transition:all .2s}
+.btn-blue:hover{background:var(--blue-light);transform:translateY(-1px);box-shadow:0 4px 14px rgba(20,70,160,.25)}
+.btn-orange{padding                                             : 10px 22px;background:var(--orange);color:#fff;border:none;border-radius:10px;font-family:var(--disp);font-size:.85rem;font-weight:800;cursor:pointer;transition:all .2s}
+.btn-orange:hover{background:var(--orange-dark);transform:translateY(-1px);box-shadow:0 4px 14px rgba(247,147,30,.35)}
+.btn-sec{padding                                                : 9px 18px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;font-family:var(--body);font-size:.83rem;font-weight:600;color:var(--mid);cursor:pointer;transition:all .2s}
+.btn-sec:hover{border-color:var(--blue);color:var(--blue)}
+.smsg{padding                                                   : 9px 13px;border-radius:10px;font-size:.8rem;font-weight:600;display:none}
+.smsg.show{display                                              : inline-block}
+.smsg.ok{background                                             : #F0FDF4;border:1px solid #BBF7D0;color:var(--success)}
+.smsg.err{background                                            : #FEF2F2;border:1px solid #FECACA;color:var(--error)}
+#shop-map{height:260px;border-radius:14px;margin-top:10px;border:1.5px solid var(--border)}
+.map-hint{font-size                                             : .74rem;color:var(--mid);margin-top:7px;display:flex;align-items:center;gap:5px}
+select.fi{appearance                                            : none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A607A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+.prod-grid{display                                              : grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:13px}
+.prod-card{background                                           : var(--white);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:all .2s}
+.prod-card:hover{transform:translateY(-3px);box-shadow:0 8px 26px rgba(20,70,160,.1);border-color:var(--blue)}
+.prod-img{width                                                 : 100%;height:120px;object-fit:cover;background:var(--off);display:block}
+.prod-ph{width                                                  : 100%;height:120px;background:linear-gradient(135deg,var(--blue-pale),var(--orange-pale));display:flex;align-items:center;justify-content:center;font-size:2.2rem}
+.prod-info{padding                                              : 11px 13px}
+.prod-name{font-family                                          : var(--disp);font-size:.82rem;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.prod-price{font-size                                           : .9rem;font-weight:700;color:var(--orange)}
+.prod-cat{font-size                                             : .65rem;color:var(--mid);margin-top:2px}
+.prod-stock-bar{height                                          : 4px;background:var(--off);border-radius:4px;margin:7px 13px;overflow:hidden}
+.prod-stock-fill{height                                         : 100%;border-radius:4px;transition:width .4s ease}
+.prod-actions{padding                                           : 0 11px 11px;display:flex;gap:5px}
+.btn-del{flex                                                   : 1;padding:5px;background:#FEF2F2;border:1px solid #FECACA;border-radius:7px;font-size:.7rem;font-weight:700;color:var(--error);cursor:pointer;transition:all .2s;font-family:var(--body)}
+.btn-del:hover{background:var(--error);color:#fff}
+.btn-restock{flex                                               : 1;padding:5px;background:var(--blue-pale);border:1px solid #C7D6FF;border-radius:7px;font-size:.7rem;font-weight:700;color:var(--blue);cursor:pointer;transition:all .2s;font-family:var(--body)}
+.btn-restock:hover{background:var(--blue);color:#fff}
+.img-prev{width                                                 : 100%;height:100px;border-radius:10px;object-fit:cover;margin-top:7px;border:1.5px solid var(--border);display:none}
+.img-prev.show{display                                          : block}
+.img-ph{width                                                   : 100%;height:80px;border-radius:10px;background:var(--off);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;margin-top:7px;font-size:.74rem;color:var(--mid)}
+.info-grid{display                                              : grid;grid-template-columns:1fr 1fr;gap:13px}
+.info-row2{display                                              : flex;flex-direction:column;gap:2px}
+.ik{font-size                                                   : .65rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.06em}
+.iv{font-size                                                   : .86rem;font-weight:600;color:var(--text)}
+.live-badge{display                                             : inline-flex;align-items:center;gap:5px;background:#F0FDF4;border:1px solid #BBF7D0;color:var(--success);font-size:.75rem;font-weight:700;padding:4px 11px;border-radius:30px}
+.live-d{width                                                   : 6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 1.6s infinite}
+.empty-state{text-align                                         : center;padding:56px 24px}
+.es-ic{font-size                                                : 2.8rem;margin-bottom:11px}
+.es-t{font-family                                               : var(--disp);font-size:.95rem;font-weight:800;margin-bottom:5px}
+.es-s{font-size                                                 : .83rem;color:var(--mid)}
+.toast{position                                                 : fixed;bottom:26px;right:26px;padding:11px 20px;border-radius:10px;font-size:.83rem;font-weight:600;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{transform                                           : translateY(0);opacity:1}
+.toast.ok{background                                            : var(--success);color:#fff;box-shadow:0 4px 18px rgba(14,166,107,.4)}
+.toast.err{background                                           : var(--error);color:#fff;box-shadow:0 4px 18px rgba(229,62,62,.4)}
+.toast.info{background                                          : var(--blue);color:#fff;box-shadow:0 4px 18px rgba(20,70,160,.4)}
+.fb-status{font-size                                            : .7rem;font-weight:600;padding:4px 10px;border-radius:30px;display:inline-flex;align-items:center;gap:5px}
+.fb-status.ok{background                                        : #F0FDF4;border:1px solid #BBF7D0;color:var(--success)}
+.fb-status.err{background                                       : #FEF2F2;border:1px solid #FECACA;color:var(--error)}
+.fb-status.loading{background                                   : #EEF3FF;border:1px solid #C7D6FF;color:var(--blue)}
+
+/* DOCUMENTS */
+.doc-field{display                                              : flex;flex-direction:column;gap:6px}
+.doc-label{font-size                                            : .73rem;font-weight:700;color:var(--mid);letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.doc-badge-req{font-size                                        : .6rem;font-weight:700;background:#FEF2F2;color:var(--error);padding:2px 7px;border-radius:30px;border:1px solid #FECACA}
+.doc-badge-opt{font-size                                        : .6rem;font-weight:700;background:var(--off);color:var(--mid);padding:2px 7px;border-radius:30px;border:1px solid var(--border)}
+.doc-upload-box{border                                          : 2px dashed var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--off);position:relative}
+.doc-upload-box:hover{border-color:var(--blue);background:var(--blue-pale)}
+.doc-upload-box input[type                                      = file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.doc-upload-icon{font-size                                      : 1.5rem;margin-bottom:5px}
+.doc-upload-text{font-size                                      : .74rem;color:var(--mid);font-weight:500}
+.doc-upload-hint{font-size                                      : .65rem;color:var(--mid);margin-top:3px;opacity:.7}
+.doc-uploaded{display                                           : flex;align-items:center;gap:10px;padding:10px 13px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;margin-top:6px}
+.doc-uploaded-icon{font-size                                    : 1.2rem}
+.doc-uploaded-name{font-size                                    : .78rem;font-weight:600;color:var(--success);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc-remove-btn{background                                      : none;border:none;cursor:pointer;color:var(--error);font-size:.75rem;font-weight:700;padding:2px 6px;border-radius:5px;transition:background .15s}
+.doc-remove-btn:hover{background:#FEF2F2}
+.doc-verify-strip{display                                       : flex;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;margin-bottom:14px}
+.doc-verify-strip.pending{background                            : #FFF8E7;border:1px solid #FDE68A}
+.doc-verify-strip.verified{background                           : #F0FDF4;border:1px solid #BBF7D0}
+.doc-verify-strip.incomplete{background                         : #FEF2F2;border:1px solid #FECACA}
+.dvs-icon{font-size                                             : 1.2rem}
+.dvs-text{font-size                                             : .8rem;font-weight:700}
+.dvs-text.pending{color                                         : var(--warn)}
+.dvs-text.verified{color                                        : var(--success)}
+.dvs-text.incomplete{color                                      : var(--error)}
+.dvs-sub{font-size                                              : .7rem;color:var(--mid);margin-top:1px}
+.doc-number-row{display                                         : grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+
+/* ═══ PAYMENT PILLS ═══ */
+.pay-pill{display                                               : inline-flex;align-items:center;gap:4px;font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:30px;letter-spacing:.01em;white-space:nowrap;vertical-align:middle}
+.pay-pill-cod{background                                        : #FFF8E7;color:#D97706;border:1px solid #FDE68A}
+.pay-pill-online{background                                     : #EFF6FF;color:#1d4ed8;border:1px solid #BFDBFE}
+/* Payment info block in order grid */
+.pay-info-block{display                                         : flex;flex-direction:column;gap:3px}
+.pay-info-label{font-size                                       : .62rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em}
+.pay-info-value{display                                         : flex;align-items:center;gap:6px}
+.pay-info-method{font-size                                      : .82rem;font-weight:700}
+.pay-info-method.cod{color                                      : #D97706}
+.pay-info-method.online{color                                   : #1d4ed8}
+.pay-info-hint{font-size                                        : .68rem;color:var(--mid)}
+/* Payment summary banner for COD orders */
+.cod-reminder{display                                           : flex;align-items:center;gap:8px;padding:8px 12px;background:#FFF8E7;border:1px solid #FDE68A;border-radius:9px;font-size:.74rem;font-weight:600;color:#92600A;margin-top:6px}
+
+/* ORDERS */
+.orders-table-wrap{overflow-x                                   : auto;border-radius:14px;border:1.5px solid var(--border)}
+.status-pill{display                                            : inline-flex;align-items:center;padding:3px 10px;border-radius:30px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.sp-confirmed{background                                        : #FFF8E7;color:#D97706}
+.sp-packed{background                                           : #EDE9FE;color:#7C3AED}
+.sp-ready{background                                            : #E0F7FA;color:#0097A7}
+.sp-picked{background                                           : #EEF3FF;color:var(--blue)}
+.sp-out{background                                              : #FFF3E0;color:#E65100}
+.sp-delivered{background                                        : #F0FDF4;color:var(--success)}
+.sp-cancelled{background                                        : #FEF2F2;color:var(--error)}
+.order-stepper{display                                          : flex;align-items:center;gap:0;margin:10px 0}
+.os-step{display                                                : flex;flex-direction:column;align-items:center;position:relative;flex:1}
+.os-dot{width                                                   : 22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;color:var(--mid);transition:all .3s;z-index:1}
+.os-dot.done{background                                         : var(--success);border-color:var(--success);color:#fff}
+.os-dot.active{background                                       : var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 0 0 4px rgba(247,147,30,.2)}
+.os-dot.cancelled{background                                    : var(--error);border-color:var(--error);color:#fff}
+.os-label{font-size                                             : .58rem;color:var(--mid);margin-top:4px;text-align:center;max-width:60px;line-height:1.3;font-weight:600}
+.os-label.active{color                                          : var(--orange);font-weight:700}
+.os-label.done{color                                            : var(--success)}
+.os-line{flex                                                   : 1;height:2px;background:var(--border);margin-top:-10px;transition:background .3s}
+.os-line.done{background                                        : var(--success)}
+.status-advance-btn{font-size                                   : .7rem;font-weight:700;padding:4px 11px;border-radius:7px;cursor:pointer;border:none;font-family:var(--body);transition:all .2s;white-space:nowrap}
+.status-advance-btn.advance{background                          : var(--blue-pale);color:var(--blue);border:1px solid #C7D6FF}
+.status-advance-btn.advance:hover{background:var(--blue);color:#fff}
+.status-advance-btn.assign{background                           : var(--orange-pale);color:var(--orange-dark);border:1px solid #FFD4A0}
+.status-advance-btn.assign:hover{background:var(--orange);color:#fff}
+.status-advance-btn.cancel{background                           : #FEF2F2;color:var(--error);border:1px solid #FECACA}
+.status-advance-btn.cancel:hover{background:var(--error);color:#fff}
+.stock-alert{display                                            : flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;margin-bottom:10px}
+.stock-alert.low{background                                     : #FFF8E7;border:1px solid #FDE68A}
+.stock-alert.out{background                                     : #FEF2F2;border:1px solid #FECACA}
+.sa-icon{font-size                                              : 1rem}
+.sa-text{font-size                                              : .8rem;font-weight:600}
+.sa-text.low{color                                              : var(--warn)}
+.sa-text.out{color                                              : var(--error)}
+
+/* REVENUE */
+.rev-grid{display                                               : grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.rev-card{background                                            : var(--white);border:1.5px solid var(--border);border-radius:16px;padding:20px;transition:all .2s}
+.rev-card:hover{border-color:var(--orange);box-shadow:0 4px 18px rgba(247,147,30,.12)}
+.rev-ic{font-size                                               : 1.4rem;margin-bottom:8px}
+.rev-v{font-family                                              : var(--disp);font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:var(--orange)}
+.rev-l{font-size                                                : .7rem;color:var(--mid);margin-top:3px;font-weight:500}
+.chart-bar-wrap{display                                         : flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px}
+.chart-bar-col{display                                          : flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.chart-bar{width                                                : 100%;background:linear-gradient(180deg,var(--orange),var(--orange-dark));border-radius:4px 4px 0 0;min-height:4px;transition:height .4s ease}
+.chart-bar-lbl{font-size                                        : .6rem;color:var(--mid);white-space:nowrap}
+.dl-btns{display                                                : flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.btn-dl{display                                                 : flex;align-items:center;gap:7px;padding:9px 20px;border:1.5px solid var(--border);background:var(--white);border-radius:10px;font-family:var(--body);font-size:.83rem;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s}
+.btn-dl:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-pale)}
+.btn-dl.pdf:hover{border-color:var(--error);color:var(--error);background:#FEF2F2}
+.filter-row{display                                             : flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.filter-sel{padding                                             : 8px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:var(--body);font-size:.82rem;color:var(--text);background:var(--white);outline:none;cursor:pointer}
+.filter-sel:focus{border-color:var(--blue)}
+.orders-count{font-size                                         : .8rem;color:var(--mid);font-weight:600}
+
+/* MODAL */
+.modal-overlay{position                                         : fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display                                     : flex}
+.modal-box{background                                           : var(--white);border-radius:20px;padding:28px;width:420px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,.2);animation:fadeUp .3s ease;max-height:85vh;overflow-y:auto}
+.modal-title{font-family                                        : var(--disp);font-size:1rem;font-weight:800;margin-bottom:6px}
+.modal-sub{font-size                                            : .82rem;color:var(--mid);margin-bottom:18px}
+.modal-actions{display                                          : flex;gap:10px;margin-top:18px}
+
+/* PARTNER CARD in assign modal */
+.partner-row{display                                            : flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid var(--border);border-radius:13px;margin-bottom:8px;cursor:pointer;transition:all .2s;background:var(--white)}
+.partner-row:hover{border-color:var(--orange);background:var(--orange-pale);transform:translateX(2px)}
+.partner-av{width                                               : 42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;font-weight:800;flex-shrink:0;overflow:hidden}
+.partner-av img{width                                           : 100%;height:100%;object-fit:cover;border-radius:50%}
+.partner-info{flex                                              : 1;min-width:0}
+.partner-name{font-weight                                       : 700;font-size:.88rem;margin-bottom:2px}
+.partner-meta{font-size                                         : .72rem;color:var(--mid);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.partner-dist-badge{font-size                                   : .68rem;font-weight:700;padding:2px 8px;border-radius:30px;background:#F0FDF4;color:var(--success);border:1px solid #BBF7D0}
+.partner-dist-badge.far{background                              : #FFF8E7;color:var(--warn);border-color:#FDE68A}
+.btn-assign-now{padding                                         : 6px 14px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:.75rem;font-weight:800;cursor:pointer;font-family:var(--disp);flex-shrink:0;transition:all .2s}
+.btn-assign-now:hover{background:var(--orange-dark);transform:scale(1.04)}
+
+/* PARTNER ASSIGNED CHIP */
+.partner-assigned-chip{display                                  : inline-flex;align-items:center;gap:7px;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:30px;padding:4px 12px 4px 4px;margin-top:8px}
+.pac-av{width                                                   : 22px;height:22px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;font-weight:800;flex-shrink:0}
+.pac-text{font-size                                             : .73rem;font-weight:700;color:var(--success)}
+.pac-vehicle{font-size                                          : .68rem;color:var(--mid)}
+
+/* DELIVERY PARTNERS panel */
+.dp-grid{display                                                : grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.dp-card{background                                             : var(--white);border:1.5px solid var(--border);border-radius:16px;padding:18px;transition:all .2s;position:relative}
+.dp-card:hover{border-color:var(--orange);box-shadow:0 6px 22px rgba(247,147,30,.1)}
+.dp-card.online{border-color                                    : #BBF7D0}
+.dp-card-av{width                                               : 48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--blue));display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:800;margin-bottom:11px;overflow:hidden}
+.dp-card-av img{width                                           : 100%;height:100%;object-fit:cover;border-radius:50%}
+.dp-card-name{font-weight                                       : 700;font-size:.9rem;margin-bottom:2px}
+.dp-card-meta{font-size                                         : .72rem;color:var(--mid)}
+.dp-online-dot{position                                         : absolute;top:14px;right:14px;width:10px;height:10px;border-radius:50%;background:#ccc;border:2px solid #fff}
+.dp-online-dot.online{background                                : var(--success);animation:pulse 1.6s infinite}
+.dp-card-stats{display                                          : flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.dp-stat-v{font-family                                          : var(--disp);font-size:.95rem;font-weight:800}
+.dp-stat-l{font-size                                            : .6rem;color:var(--mid)}
+
+@keyframes pulse{0%,100%{transform                              : scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+@keyframes fadeUp{from{opacity                                  : 0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation                                                   : fadeUp .5s ease both}
+.d1{animation-delay                                             : .1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}
+
+@media(max-width:768px){
+  .auth-left{display                                            : none}.auth-right{width:100%;padding:36px 28px}
+  .dash-layout{grid-template-columns                            : 1fr}.sidebar{display:none}
+  .stat-row{grid-template-columns                               : 1fr 1fr}.form-row{grid-template-columns:1fr}
+  .doc-number-row{grid-template-columns                         : 1fr}.rev-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id                                                         = "screen-auth">
+  <div class                                                    = "auth-left">
+    <div class                                                  = "grid-bg-auth"></div>
+    <div class                                                  = "al-logo"><span class="ls">Local</span><span class="shore">Shore</span><span class="tag">Vendor Portal</span></div>
+    <h2>Your shop.<br>Your customers.<br><span class            = "hollow">Your city.</span></h2>
+    <p>List your local shop on LocalShore and reach customers within 15 km — synced across all devices in real time.</p>
+    <div class                                                  = "auth-perks">
+      <div class                                                = "aperk"><div class="ap-dot"></div><span>Assign orders to nearby delivery partners</span></div>
+      <div class                                                = "aperk"><div class="ap-dot"></div><span>Real-time order & delivery tracking</span></div>
+      <div class                                                = "aperk"><div class="ap-dot"></div><span>Live stock updates on every order</span></div>
+      <div class                                                = "aperk"><div class="ap-dot"></div><span>15 km customer reach, zero fees</span></div>
+    </div>
+    <div class                                                  = "auth-stats">
+      <div><div class                                           = "ast-v">500<span>+</span></div><div class="ast-l">Vendors</div></div>
+      <div><div class                                           = "ast-v">60<span>min</span></div><div class="ast-l">Avg Delivery</div></div>
+      <div><div class                                           = "ast-v">15<span>km</span></div><div class="ast-l">Radius</div></div>
+    </div>
+  </div>
+  <div class                                                    = "auth-right">
+    <div class                                                  = "auth-form">
+      <div class                                                = "auth-ttl fu">Welcome 👋</div>
+      <div class                                                = "auth-sub fu d1">Login or create your vendor account to get started.</div>
+      <div class                                                = "atabs fu d2">
+        <button class                                           = "atab active" onclick="switchAuth('login')">Login</button>
+        <button class                                           = "atab" onclick="switchAuth('register')">Register</button>
+      </div>
+      <div id                                                   = "ng" class="fg fu d2" style="display:none"><label class="fl">Full Name</label><input class="fi" id="a-name" type="text" placeholder="e.g. Ramesh Kumar"></div>
+      <div class                                                = "fg fu d3"><label class="fl">Email Address</label><input class="fi" id="a-email" type="email" placeholder="you@example.com"></div>
+      <div class                                                = "fg fu d3"><label class="fl">Password</label><input class="fi" id="a-pass" type="password" placeholder="Min. 6 characters"></div>
+      <div class                                                = "amsg err" id="a-err"></div>
+      <div class                                                = "amsg ok" id="a-ok"></div>
+      <button class                                             = "btn-submit fu d4" id="a-btn" onclick="handleAuth()">Login →</button>
+    </div>
+    <div class                                                  = "auth-footer">© 2025 LocalShore. All rights reserved.</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id                                                         = "screen-dash">
+  <div class                                                    = "topbar">
+    <div class                                                  = "tb-logo"><span class="ls">Local</span><span class="shore">Shore</span><span class="vtag">Vendor</span></div>
+    <div class                                                  = "tb-right">
+      <div id                                                   = "fb-indicator" class="fb-status loading">⏳ Connecting…</div>
+      <div class                                                = "vchip"><div class="vc-av" id="vc-av">V</div><div class="vc-n" id="vc-name">Vendor</div></div>
+      <button class                                             = "btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class                                                    = "dash-layout">
+    <div class                                                  = "sidebar">
+      <div class                                                = "sb-sec">Main</div>
+      <button class                                             = "sb-item active" onclick="goPanel('overview')"><span class="si">📊</span>Overview</button>
+      <div class                                                = "sb-sec">My Shop</div>
+      <button class                                             = "sb-item" onclick="goPanel('shop')"><span class="si">🏪</span>Shop Setup</button>
+      <button class                                             = "sb-item" onclick="goPanel('documents')"><span class="si">📄</span>Documents</button>
+      <button class                                             = "sb-item" onclick="goPanel('products')"><span class="si">📦</span>My Products</button>
+      <button class                                             = "sb-item" onclick="goPanel('add')"><span class="si">➕</span>Add Product</button>
+      <div class                                                = "sb-sec">Business</div>
+      <button class                                             = "sb-item" onclick="goPanel('orders')"><span class="si">📋</span>Orders <span id="new-orders-dot" style="display:none;width:7px;height:7px;border-radius:50%;background:var(--error);margin-left:auto;flex-shrink:0"></span></button>
+      <button class                                             = "sb-item" onclick="goPanel('partners')"><span class="si">🛵</span>Delivery Partners</button>
+      <button class                                             = "sb-item" onclick="goPanel('revenue')"><span class="si">💰</span>Revenue</button>
+    </div>
+    <div class                                                  = "panels">
+
+      <!-- Overview -->
+      <div class                                                = "panel active" id="panel-overview">
+        <div class                                              = "ph"><div class="ph-title fu">Dashboard 📊</div><div class="ph-sub fu d1" id="ov-sub">Loading your shop…</div></div>
+        <div class                                              = "stat-row">
+          <div class                                            = "stat-card fu d1"><div class="sc-ic">📦</div><div class="sc-v" id="st-p">0</div><div class="sc-l">Products</div></div>
+          <div class                                            = "stat-card fu d2"><div class="sc-ic">🛵</div><div class="sc-v" id="st-dp">0</div><div class="sc-l">Partners Online</div></div>
+          <div class                                            = "stat-card fu d3"><div class="sc-ic">✅</div><div class="sc-v" id="st-s">0</div><div class="sc-l">In Stock</div></div>
+          <div class                                            = "stat-card fu d4"><div class="sc-ic">🏪</div><div class="sc-v" id="st-st">—</div><div class="sc-l">Shop Status</div></div>
+        </div>
+        <div id                                                 = "stock-alerts-wrap"></div>
+        <div class                                              = "card fu d2"><div class="card-title">🏪 Shop Summary</div><div id="shop-summary"><p style="color:var(--mid);font-size:.86rem">Complete your shop setup to go live on LocalShore.</p></div></div>
+        <div class                                              = "card fu d3"><div class="card-title">📄 Document Status</div><div id="doc-summary-overview"></div></div>
+      </div>
+
+      <!-- Shop Setup -->
+      <div class                                                = "panel" id="panel-shop">
+        <div class                                              = "ph"><div class="ph-title">🏪 Shop Setup</div><div class="ph-sub">Your shop details visible to customers on LocalShore.</div></div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">📋 Basic Information</div>
+          <div class                                            = "form-row" style="margin-bottom:13px">
+            <div class                                          = "fg" style="margin:0"><label class="fl">Shop Name *</label><input class="fi" id="s-name" type="text" placeholder="e.g. Ramesh Stores"></div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">Category *</label>
+              <select class                                     = "fi" id="s-cat"><option value="">Select category</option><option>General Store</option><option>Electronics</option><option>Fruits &amp; Vegetables</option><option>Medical / Pharmacy</option><option>Fashion &amp; Clothing</option><option>Food &amp; Sweets</option><option>Kids &amp; Toys</option><option>Sports &amp; Fitness</option><option>Kitchen &amp; Home</option><option>Books &amp; Stationery</option><option>Meat &amp; Seafood</option><option>Bakery</option><option>Other</option></select>
+            </div>
+          </div>
+          <div class                                            = "fg" style="margin-bottom:13px"><label class="fl">Full Address *</label><input class="fi" id="s-addr" type="text" placeholder="e.g. 12, RS Puram, Coimbatore - 641002"></div>
+          <div class                                            = "form-row" style="margin-bottom:13px">
+            <div class                                          = "fg" style="margin:0"><label class="fl">Phone Number</label><input class="fi" id="s-phone" type="tel" placeholder="+91 98765 43210"></div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">Opening Hours</label><input class="fi" id="s-hours" type="text" placeholder="9 AM – 9 PM"></div>
+          </div>
+          <div class                                            = "fg"><label class="fl">Short Description</label><input class="fi" id="s-desc" type="text" placeholder="Brief description of your shop"></div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">📍 Pin Your Shop Location</div>
+          <p style                                              = "font-size:.81rem;color:var(--mid)">Click the map to pin your exact shop location, or use auto-detect.</p>
+          <button class                                         = "btn-sec" onclick="detectLoc()" style="margin-top:9px">📡 Auto-detect my location</button>
+          <div id                                               = "shop-map"></div>
+          <div class                                            = "map-hint">📍 <span id="map-txt">No location pinned</span></div>
+        </div>
+        <div style                                              = "display:flex;align-items:center;gap:13px;flex-wrap:wrap">
+          <button class                                         = "btn-blue" onclick="saveShop()">💾 Save Shop</button>
+          <button class                                         = "btn-sec" onclick="goPanel('documents')">📄 Upload Documents →</button>
+          <div class                                            = "smsg ok" id="shop-ok"></div>
+          <div class                                            = "smsg err" id="shop-err"></div>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <div class                                                = "panel" id="panel-documents">
+        <div class                                              = "ph"><div class="ph-title">📄 Shop Documents</div><div class="ph-sub">Upload business certificates for verified seller status.</div></div>
+        <div id                                                 = "doc-verify-strip-wrap"></div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">🏛️ GST Registration</div>
+          <div class                                            = "doc-number-row">
+            <div class                                          = "fg" style="margin:0"><label class="fl">GST Number <span class="doc-badge-req">Required</span></label><input class="fi" id="d-gst-num" type="text" placeholder="22AAAAA0000A1Z5" maxlength="15" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">GST Registration Date</label><input class="fi" id="d-gst-date" type="date"></div>
+          </div>
+          <div class                                            = "doc-field">
+            <div class                                          = "doc-label">GST Certificate <span class="doc-badge-req">Required</span></div>
+            <div class                                          = "doc-upload-box" id="gst-cert-box" onclick="triggerUpload('gst-cert-file')">
+              <input type                                       = "file" id="gst-cert-file" accept=".pdf,.jpg,.jpeg,.png" onchange="handleDocUpload('gst-cert','gst-cert-file','gst-cert-box')">
+              <div class                                        = "doc-upload-icon">📋</div><div class="doc-upload-text">Click to upload GST Certificate</div><div class="doc-upload-hint">PDF, JPG, PNG — Max 5 MB</div>
+            </div>
+            <div class                                          = "doc-uploaded" id="gst-cert-uploaded" style="display:none"><span class="doc-uploaded-icon">✅</span><span class="doc-uploaded-name" id="gst-cert-name"></span><button class="doc-remove-btn" onclick="removeDoc('gst-cert')">✕</button></div>
+          </div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">🏪 Shop Registration</div>
+          <div class                                            = "doc-number-row">
+            <div class                                          = "fg" style="margin:0"><label class="fl">Shop Reg. Number <span class="doc-badge-req">Required</span></label><input class="fi" id="d-shop-reg-num" type="text" placeholder="SHO/CBE/2024/12345"></div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">Valid Until</label><input class="fi" id="d-shop-reg-expiry" type="date"></div>
+          </div>
+          <div class                                            = "doc-field">
+            <div class                                          = "doc-label">Shop Registration Certificate <span class="doc-badge-req">Required</span></div>
+            <div class                                          = "doc-upload-box" id="shop-cert-box" onclick="triggerUpload('shop-cert-file')">
+              <input type                                       = "file" id="shop-cert-file" accept=".pdf,.jpg,.jpeg,.png" onchange="handleDocUpload('shop-cert','shop-cert-file','shop-cert-box')">
+              <div class                                        = "doc-upload-icon">🏪</div><div class="doc-upload-text">Click to upload Shop Certificate</div><div class="doc-upload-hint">PDF, JPG, PNG — Max 5 MB</div>
+            </div>
+            <div class                                          = "doc-uploaded" id="shop-cert-uploaded" style="display:none"><span class="doc-uploaded-icon">✅</span><span class="doc-uploaded-name" id="shop-cert-name"></span><button class="doc-remove-btn" onclick="removeDoc('shop-cert')">✕</button></div>
+          </div>
+        </div>
+        <div style                                              = "display:flex;align-items:center;gap:13px;flex-wrap:wrap">
+          <button class                                         = "btn-blue" onclick="saveDocs()">💾 Save Documents</button>
+          <div class                                            = "smsg ok" id="doc-ok"></div>
+          <div class                                            = "smsg err" id="doc-err"></div>
+        </div>
+      </div>
+
+      <!-- Products -->
+      <div class                                                = "panel" id="panel-products">
+        <div class                                              = "ph"><div class="ph-title">📦 My Products</div><div class="ph-sub">All products listed in your shop.</div></div>
+        <div id                                                 = "stock-alerts-prod-wrap"></div>
+        <div id                                                 = "prod-list"><div class="empty-state"><div class="es-ic">📦</div><div class="es-t">No products yet</div><div class="es-s">Go to Add Product to list your first item.</div></div></div>
+      </div>
+
+      <!-- Add Product -->
+      <div class                                                = "panel" id="panel-add">
+        <div class                                              = "ph"><div class="ph-title">➕ Add Product</div><div class="ph-sub">List a new product in your shop.</div></div>
+        <div class                                              = "card">
+          <div class                                            = "form-row" style="margin-bottom:13px">
+            <div class                                          = "fg" style="margin:0"><label class="fl">Product Name *</label><input class="fi" id="p-name" type="text" placeholder="e.g. Fresh Bananas (1 dozen)"></div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">Price (₹) *</label><input class="fi" id="p-price" type="number" min="0" placeholder="49"></div>
+          </div>
+          <div class                                            = "form-row" style="margin-bottom:13px">
+            <div class                                          = "fg" style="margin:0"><label class="fl">Category *</label>
+              <select class                                     = "fi" id="p-cat"><option value="">Select category</option><option>Groceries</option><option>Fruits &amp; Vegetables</option><option>Dairy &amp; Eggs</option><option>Snacks &amp; Beverages</option><option>Electronics</option><option>Fashion &amp; Clothing</option><option>Home &amp; Kitchen</option><option>Medical &amp; Health</option><option>Sports &amp; Fitness</option><option>Kids &amp; Toys</option><option>Books &amp; Stationery</option><option>Meat &amp; Seafood</option><option>Bakery &amp; Sweets</option><option>Other</option></select>
+            </div>
+            <div class                                          = "fg" style="margin:0"><label class="fl">Stock Quantity *</label><input class="fi" id="p-stock" type="number" min="0" placeholder="100"></div>
+          </div>
+          <div class                                            = "fg" style="margin-bottom:13px">
+            <label class                                        = "fl">Product Image URL</label>
+            <input class                                        = "fi" id="p-img" type="url" placeholder="https://example.com/image.jpg" oninput="previewImg()">
+            <div class                                          = "img-ph" id="img-ph">🖼️ <span>Paste URL to preview</span></div>
+            <img class                                          = "img-prev" id="img-prev" src="" alt="" onerror="this.classList.remove('show');document.getElementById('img-ph').style.display='flex'">
+          </div>
+          <div class                                            = "fg" style="margin-bottom:18px"><label class="fl">Description (optional)</label><input class="fi" id="p-desc" type="text" placeholder="Short product description"></div>
+          <div style                                            = "display:flex;gap:11px;align-items:center;flex-wrap:wrap">
+            <button class                                       = "btn-orange" onclick="addProduct()">➕ Add Product</button>
+            <button class                                       = "btn-sec" onclick="clearProdForm()">Clear</button>
+            <div class                                          = "smsg ok" id="prod-ok"></div>
+            <div class                                          = "smsg err" id="prod-err"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders -->
+      <div class                                                = "panel" id="panel-orders">
+        <div class                                              = "ph"><div class="ph-title">📋 Customer Orders</div><div class="ph-sub">Manage orders and assign delivery partners for fulfillment.</div></div>
+        <div class                                              = "dl-btns">
+          <button class                                         = "btn-dl pdf" onclick="downloadPDF()">📄 Download PDF</button>
+        </div>
+        <div class                                              = "filter-row">
+          <select class                                         = "filter-sel" id="order-filter-status" onchange="renderOrdersPanel()">
+            <option value                                       = "">All Status</option>
+            <option value                                       = "Confirmed">Confirmed</option>
+            <option value                                       = "Packed">Packed</option>
+            <option value                                       = "Ready for Pickup">Ready for Pickup</option>
+            <option value                                       = "Picked Up">Picked Up</option>
+            <option value                                       = "Out for Delivery">Out for Delivery</option>
+            <option value                                       = "Delivered">Delivered</option>
+            <option value                                       = "Cancelled">Cancelled</option>
+          </select>
+          <select class                                         = "filter-sel" id="order-filter-sort" onchange="renderOrdersPanel()">
+            <option value                                       = "desc">Newest First</option>
+            <option value                                       = "asc">Oldest First</option>
+          </select>
+          <select class                                         = "filter-sel" id="order-filter-pay" onchange="renderOrdersPanel()">
+            <option value                                       = "">All Payment Types</option>
+            <option value                                       = "cod">💵 Cash on Delivery</option>
+            <option value                                       = "online">💳 Online Payment</option>
+          </select>
+          <span class                                           = "orders-count" id="orders-count-lbl"></span>
+        </div>
+        <div id                                                 = "orders-container"></div>
+      </div>
+
+      <!-- Delivery Partners Panel -->
+      <div class                                                = "panel" id="panel-partners">
+        <div class                                              = "ph"><div class="ph-title">🛵 Delivery Partners</div><div class="ph-sub">All delivery partners on LocalShore — online partners can be assigned to your orders.</div></div>
+        <div class                                              = "stat-row" style="grid-template-columns:repeat(3,1fr)">
+          <div class                                            = "stat-card"><div class="sc-ic">🟢</div><div class="sc-v" id="dp-online-count">0</div><div class="sc-l">Online Now</div></div>
+          <div class                                            = "stat-card"><div class="sc-ic">🛵</div><div class="sc-v" id="dp-total-count">0</div><div class="sc-l">Total Partners</div></div>
+          <div class                                            = "stat-card"><div class="sc-ic">📦</div><div class="sc-v" id="dp-active-count">0</div><div class="sc-l">On Delivery</div></div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">👥 All Delivery Partners</div>
+          <div id                                               = "partners-grid" class="dp-grid"><div class="empty-state"><div class="es-ic">🛵</div><div class="es-t">No partners yet</div><div class="es-s">Delivery partners will appear here once they register.</div></div></div>
+        </div>
+      </div>
+
+      <!-- Revenue -->
+      <div class                                                = "panel" id="panel-revenue">
+        <div class                                              = "ph"><div class="ph-title">💰 Revenue</div><div class="ph-sub">Your earnings from LocalShore orders.</div></div>
+        <div class                                              = "rev-grid">
+          <div class                                            = "rev-card"><div class="rev-ic">💰</div><div class="rev-v" id="rv-total">₹0</div><div class="rev-l">Total Revenue</div></div>
+          <div class                                            = "rev-card"><div class="rev-ic">📦</div><div class="rev-v" id="rv-orders">0</div><div class="rev-l">Total Orders</div></div>
+          <div class                                            = "rev-card"><div class="rev-ic">💵</div><div class="rev-v" id="rv-cod">₹0</div><div class="rev-l">COD Pending Collection</div></div>
+          <div class                                            = "rev-card"><div class="rev-ic">📈</div><div class="rev-v" id="rv-avg">₹0</div><div class="rev-l">Avg Order Value</div></div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">💳 Payment Breakdown</div>
+          <div id                                               = "rev-pay-breakdown" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px"></div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">📊 Revenue by Product</div>
+          <div id                                               = "rev-by-product" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>
+        </div>
+        <div class                                              = "card">
+          <div class                                            = "card-title">📅 Last 7 Days</div>
+          <div class                                            = "chart-bar-wrap" id="rev-chart"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class                                                      = "modal-overlay" id="restock-modal">
+  <div class                                                    = "modal-box">
+    <div class                                                  = "modal-title">📦 Restock Product</div>
+    <div class                                                  = "modal-sub" id="restock-modal-sub">Update stock quantity.</div>
+    <div class                                                  = "fg" style="margin-bottom:0"><label class="fl">New Stock Quantity</label><input class="fi" id="restock-qty" type="number" min="0" placeholder="e.g. 50"></div>
+    <div class                                                  = "modal-actions">
+      <button class                                             = "btn-blue" onclick="confirmRestock()" style="flex:1">✅ Update Stock</button>
+      <button class                                             = "btn-sec" onclick="closeRestockModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Partner Modal -->
+<div class                                                      = "modal-overlay" id="assign-modal">
+  <div class                                                    = "modal-box">
+    <div class                                                  = "modal-title">🛵 Assign Delivery Partner</div>
+    <div class                                                  = "modal-sub" id="assign-modal-sub">Select an online partner near your shop to handle this delivery.</div>
+    <div id                                                     = "assign-modal-partners">
+      <div style                                                = "text-align:center;padding:20px">
+        <div style                                              = "width:26px;height:26px;border:3px solid rgba(247,147,30,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px"></div>
+        <div style                                              = "font-size:.82rem;color:var(--mid)">Loading nearby partners…</div>
+      </div>
+    </div>
+    <div class                                                  = "modal-actions" style="margin-top:10px">
+      <button class                                             = "btn-sec" onclick="closeAssignModal()" style="width:100%">✕ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class                                                      = "toast" id="toast"></div>
+
+<style>@keyframes spin{to{transform                             : rotate(360deg)}}</style>
+
+<script>
+const fbConfig={
+  apiKey                                                        : "AIzaSyD3bMVjeXXAYvCeUgvhlT_KrHuhpgohqgU",
+  authDomain                                                    : "localshore.firebaseapp.com",
+  projectId                                                     : "localshore",
+  storageBucket                                                 : "localshore.firebasestorage.app",
+  messagingSenderId                                             : "571613573322",
+  appId                                                         : "1:571613573322:web:231c155de7d8227e0e8433"
+};
+firebase.initializeApp(fbConfig);
+const db                                                        = firebase.firestore();
+const shopsCol                                                  = ()=>db.collection('shops');
+const productsCol                                               = ()=>db.collection('products');
+
+const LS={
+  get                                                           : (k)=>{try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},
+  set                                                           : (k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+  del                                                           : (k)=>localStorage.removeItem(k)
+};
+const getVendors                                                = ()=>LS.get('lsv_vendors')||{};
+const now                                                       = ()=>new Date().toISOString();
+const uid                                                       = ()=>'_v'+Math.random().toString(36).slice(2)+Date.now();
+
+function haversineKm(la1,ln1,la2,ln2){
+  const R                                                       = 6371,dLat=(la2-la1)*Math.PI/180,dLng=(ln2-ln1)*Math.PI/180;
+  const a                                                       = Math.sin(dLat/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+const distLabel                                                 = km=>km<1?(km*1000).toFixed(0)+' m away':km.toFixed(1)+' km away';
+
+let cu                                                          = null,vs=null,map=null,mkr=null,slat=null,slng=null;
+let prodUnsubscribe                                             = null,partnersUnsubscribe=null,_vendorOrders=[],_allProducts=[],_allPartners=[];
+let _restockProductId                                           = null,_uploadedDocs={},_assignOrderId=null;
+
+const toast                                                     = (m,t='ok')=>{const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;setTimeout(()=>e.className='toast',3000);};
+const smsg                                                      = (id,m,t='ok')=>{const e=document.getElementById(id);e.textContent=m;e.className='smsg show '+t;setTimeout(()=>e.className='smsg',4000);};
+const setFbStatus                                               = s=>{const e=document.getElementById('fb-indicator');if(!e)return;const map2={ok:['✅ Firebase Connected','ok'],err:['❌ Offline','err'],loading:['⏳ Connecting…','loading']};const[txt,cls]=map2[s]||map2.loading;e.textContent=txt;e.className='fb-status '+cls;};
+
+const showScreen=s=>{
+  document.getElementById('screen-auth').className=s==='auth'?'active':'';
+  document.getElementById('screen-dash').className=s==='dash'?'active':'';
+};
+
+// ── Payment helper ──────────────────────────────────────────────
+function payPill(o){
+  if(!o.paymentMethod)return '';
+  const isCod                                                   = o.paymentMethod==='cod';
+  return `<span class="pay-pill ${isCod?'pay-pill-cod':'pay-pill-online'}">${isCod?'💵 Cash on Delivery':'💳 Online Payment'}</span>`;
+}
+function payInfoBlock(o){
+  const pm                                                      = o.paymentMethod||'cod';// default assume COD for legacy orders
+  const isCod                                                   = pm==='cod';
+  return `<div class="pay-info-block">
+    <div class                                                  = "pay-info-label">💳 Payment</div>
+    <div class                                                  = "pay-info-value">
+      <span class                                               = "pay-info-method ${isCod?'cod':'online'}">${isCod?'💵 Cash on Delivery':'💳 Online Payment'}</span>
+    </div>
+    ${isCod?'<div class                                         = "pay-info-hint">Collect ₹'+o.total+' in cash at door</div>':'<div class="pay-info-hint">Paid online — no collection needed</div>'}
+  </div>`;
+}
+function codReminder(o){
+  if(o.paymentMethod&&o.paymentMethod!=='cod')return '';
+  if(o.status==='Delivered'||o.status==='Cancelled')return '';
+  return `<div class="cod-reminder">💵 COD Order — remind delivery partner to collect <strong>₹${o.total}</strong> in cash</div>`;
+}
+
+let authMode                                                    = 'login';
+window.switchAuth=m=>{
+  authMode                                                      = m;
+  document.querySelectorAll('.atab').forEach((t,i)=>t.classList.toggle('active',['login','register'][i]===m));
+  document.getElementById('ng').style.display=m==='register'?'flex':'none';
+  document.getElementById('a-btn').textContent=m==='login'?'Login →':'Create Account →';
+  ['a-err','a-ok'].forEach(id=>{const e=document.getElementById(id);e.className=e.className.replace(' show','');});
+};
+
+window.handleAuth=()=>{
+  const email                                                   = document.getElementById('a-email').value.trim().toLowerCase();
+  const pass                                                    = document.getElementById('a-pass').value;
+  const name                                                    = document.getElementById('a-name').value.trim();
+  const err                                                     = document.getElementById('a-err');
+  if(!email||!pass){err.textContent='⚠ Please fill in all fields.';err.className='amsg err show';return;}
+  const vendors                                                 = getVendors();
+  if(authMode==='register'){
+    if(!name){err.textContent='⚠ Please enter your name.';err.className='amsg err show';return;}
+    if(pass.length<6){err.textContent='⚠ Password must be at least 6 characters.';err.className='amsg err show';return;}
+    if(vendors[email]){err.textContent='⚠ Email already registered. Please login.';err.className='amsg err show';return;}
+    const id                                                    = uid();vendors[email]={id,name,email,pass,createdAt:now()};LS.set('lsv_vendors',vendors);
+    loginUser({id,name,email});
+  }else{
+    const v                                                     = vendors[email];
+    if(!v){err.textContent='⚠ No account found with this email.';err.className='amsg err show';return;}
+    if(v.pass!==pass){err.textContent='⚠ Incorrect password.';err.className='amsg err show';return;}
+    loginUser({id                                               : v.id,name:v.name,email:v.email});
+  }
+};
+
+function loginUser(user){
+  cu                                                            = user;LS.set('lsv_session',user);
+  document.getElementById('vc-av').textContent=user.name[0].toUpperCase();
+  document.getElementById('vc-name').textContent=user.name;
+  document.getElementById('ov-sub').textContent='Hello '+user.name+'! Here is your live dashboard.';
+  showScreen('dash');goPanel('overview');
+  loadShopFromFirebase();
+  setTimeout(initMap,250);
+  setTimeout(loadOrders,1500);
+  subscribeToPartners();
+}
+
+window.doLogout=()=>{
+  LS.del('lsv_session');
+  if(prodUnsubscribe)prodUnsubscribe();
+  if(partnersUnsubscribe)partnersUnsubscribe();
+  cu                                                            = null;vs=null;map=null;mkr=null;slat=null;slng=null;_vendorOrders=[];_allProducts=[];_allPartners=[];_uploadedDocs={};
+  document.getElementById('a-email').value='';document.getElementById('a-pass').value='';
+  showScreen('auth');toast('Logged out','info');
+};
+
+window.addEventListener('load',()=>{
+  const s                                                       = LS.get('lsv_session');
+  if(s&&s.id)loginUser(s);
+  else showScreen('auth');
+});
+
+// ── Map ──────────────────────────────────────────────────────────
+function mkIcon(){return L.divIcon({className                   : '',html:'<div style="width:16px;height:16px;background:var(--orange);border:3px solid #fff;border-radius:50%;box-shadow:0 2px 10px rgba(247,147,30,.6)"></div>',iconSize:[16,16],iconAnchor:[8,8]});}
+function initMap(){
+  if(map)return;
+  const el                                                      = document.getElementById('shop-map');if(!el)return;
+  map                                                           = L.map('shop-map').setView([11.0168,76.9558],13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
+  map.on('click',e=>{
+    slat                                                        = e.latlng.lat;slng=e.latlng.lng;
+    if(mkr)map.removeLayer(mkr);
+    mkr                                                         = L.marker([slat,slng],{icon:mkIcon()}).addTo(map).bindPopup('📍 Your shop').openPopup();
+    document.getElementById('map-txt').textContent='Pinned: '+slat.toFixed(5)+', '+slng.toFixed(5);
+  });
+  if(vs&&vs.lat&&vs.lng){slat=vs.lat;slng=vs.lng;map.setView([slat,slng],15);mkr=L.marker([slat,slng],{icon:mkIcon()}).addTo(map).bindPopup('📍 Your shop').openPopup();document.getElementById('map-txt').textContent='Pinned: '+slat.toFixed(5)+', '+slng.toFixed(5);}
+}
+window.detectLoc=()=>{
+  if(!navigator.geolocation){toast('Geolocation not supported','err');return;}
+  navigator.geolocation.getCurrentPosition(p=>{
+    slat                                                        = p.coords.latitude;slng=p.coords.longitude;
+    map.flyTo([slat,slng],16);if(mkr)map.removeLayer(mkr);
+    mkr                                                         = L.marker([slat,slng],{icon:mkIcon()}).addTo(map).bindPopup('📍 Your shop').openPopup();
+    document.getElementById('map-txt').textContent='Auto-detected: '+slat.toFixed(5)+', '+slng.toFixed(5);
+    toast('Location detected! ✅');
+  },()=>toast('Location permission denied','err'));
+};
+
+// ── Shop ─────────────────────────────────────────────────────────
+function loadShopFromFirebase(){
+  if(!cu)return;setFbStatus('loading');
+  shopsCol().doc(cu.id).get()
+    .then(doc=>{
+      setFbStatus('ok');
+      if(doc.exists){vs={id:doc.id,...doc.data()};fillShopForm(vs);updateSummary(vs);if(vs.docs)loadDocState(vs.docs);subscribeToProducts();}
+      else subscribeToProducts();
+    }).catch(e=>{setFbStatus('err');});
+}
+function fillShopForm(d){
+  document.getElementById('s-name').value=d.name||'';document.getElementById('s-cat').value=d.category||'';
+  document.getElementById('s-addr').value=d.address||'';document.getElementById('s-phone').value=d.phone||'';
+  document.getElementById('s-hours').value=d.hours||'';document.getElementById('s-desc').value=d.desc||'';
+  if(d.lat&&d.lng){slat=d.lat;slng=d.lng;document.getElementById('map-txt').textContent='Pinned: '+d.lat.toFixed(5)+', '+d.lng.toFixed(5);}
+}
+function infoRow(k,v){return '<div class                        = "info-row2"><div class="ik">'+k+'</div><div class="iv">'+(v||'—')+'</div></div>';}
+function updateSummary(d){
+  if(!d||!d.name)return;
+  document.getElementById('st-st').innerHTML='<span class="live-badge"><span class="live-d"></span>Live</span>';
+  document.getElementById('shop-summary').innerHTML='<div class="info-grid">'+infoRow('Shop Name',d.name)+infoRow('Category',d.category)+infoRow('Address',d.address)+infoRow('Phone',d.phone)+infoRow('Hours',d.hours)+infoRow('Location',d.lat?d.lat.toFixed(4)+', '+d.lng.toFixed(4):null)+'</div>';
+}
+window.saveShop=()=>{
+  const name                                                    = document.getElementById('s-name').value.trim();
+  const cat                                                     = document.getElementById('s-cat').value;
+  const addr                                                    = document.getElementById('s-addr').value.trim();
+  if(!name||!cat||!addr){smsg('shop-err','⚠ Name, category and address required.','err');return;}
+  const data                                                    = {name,category:cat,address:addr,phone:document.getElementById('s-phone').value.trim(),hours:document.getElementById('s-hours').value.trim(),desc:document.getElementById('s-desc').value.trim(),lat:slat||0,lng:slng||0,vendorId:cu.id,vendorName:cu.name,vendorEmail:cu.email,rating:4.5,updatedAt:now(),createdAt:(vs&&vs.createdAt)||now(),docs:vs?.docs||{}};
+  smsg('shop-ok','⏳ Saving…');
+  shopsCol().doc(cu.id).set(data).then(()=>{vs={id:cu.id,...data};updateSummary(vs);smsg('shop-ok','✅ Shop saved & live!');toast('Shop live on LocalShore! 🎉');}).catch(e=>smsg('shop-err','❌ '+e.message,'err'));
+};
+
+// ── Documents ────────────────────────────────────────────────────
+const DOC_KEYS                                                  = ['gst-cert','shop-cert'];
+window.triggerUpload                                            = id=>document.getElementById(id)?.click();
+window.handleDocUpload=(docKey,fileInputId,boxId)=>{
+  const file                                                    = document.getElementById(fileInputId)?.files[0];
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('File too large — max 5 MB','err');return;}
+  const reader                                                  = new FileReader();
+  reader.onload=e=>{
+    _uploadedDocs[docKey]                                       = {name:file.name,type:file.type,data:e.target.result,size:file.size};
+    document.getElementById(docKey+'-uploaded').style.display   = 'flex';
+    document.getElementById(docKey+'-name').textContent         = '📎 '+file.name;
+    document.getElementById(boxId).style.display                = 'none';
+    updateDocVerifyStrip();
+  };
+  reader.readAsDataURL(file);
+};
+window.removeDoc=docKey=>{
+  delete _uploadedDocs[docKey];
+  document.getElementById(docKey+'-uploaded').style.display     = 'none';
+  document.getElementById(docKey+'-box').style.display          = 'block';
+  updateDocVerifyStrip();
+};
+function loadDocState(docs){
+  if(!docs)return;
+  DOC_KEYS.forEach(k=>{
+    if(docs[k]){_uploadedDocs[k]=docs[k];document.getElementById(k+'-uploaded').style.display='flex';document.getElementById(k+'-name').textContent='📎 '+docs[k].name;document.getElementById(k+'-box').style.display='none';}
+  });
+  [['d-gst-num','_gst-num'],['d-gst-date','_gst-date'],['d-shop-reg-num','_shop-reg-num'],['d-shop-reg-expiry','_shop-reg-expiry']].forEach(([elId,key])=>{const el=document.getElementById(elId);if(el&&docs[key])el.value=docs[key];});
+  updateDocVerifyStrip();renderDocOverviewSummary();
+}
+function getDocCompleteness(){
+  const hasGST                                                  = !!_uploadedDocs['gst-cert']&&document.getElementById('d-gst-num')?.value?.trim().length===15;
+  const hasShop                                                 = !!_uploadedDocs['shop-cert']&&document.getElementById('d-shop-reg-num')?.value?.trim();
+  if(hasGST&&hasShop)return 'verified';
+  if(_uploadedDocs['gst-cert']||_uploadedDocs['shop-cert'])return 'pending';
+  return 'incomplete';
+}
+function updateDocVerifyStrip(){
+  const status                                                  = getDocCompleteness();
+  const wrap                                                    = document.getElementById('doc-verify-strip-wrap');if(!wrap)return;
+  const configs                                                 = {verified:{cls:'verified',icon:'✅',text:'Documents Verified',sub:'Your shop is verified on LocalShore.'},pending:{cls:'pending',icon:'⏳',text:'Documents Pending',sub:'Upload GST + Shop Certificate to get verified.'},incomplete:{cls:'incomplete',icon:'⚠️',text:'Documents Incomplete',sub:'Please upload at least GST & Shop Registration.'}};
+  const c                                                       = configs[status];
+  wrap.innerHTML                                                = '<div class="doc-verify-strip '+c.cls+'"><div class="dvs-icon">'+c.icon+'</div><div><div class="dvs-text '+c.cls+'">'+c.text+'</div><div class="dvs-sub">'+c.sub+'</div></div></div>';
+  renderDocOverviewSummary();
+}
+function renderDocOverviewSummary(){
+  const el                                                      = document.getElementById('doc-summary-overview');if(!el)return;
+  const docs                                                    = [{label:'GST Certificate',key:'gst-cert',numId:'d-gst-num',req:true},{label:'Shop Registration',key:'shop-cert',numId:'d-shop-reg-num',req:true}];
+  el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+docs.map(d=>{
+    const uploaded                                              = !!_uploadedDocs[d.key];const numVal=document.getElementById(d.numId)?.value?.trim();const ok=uploaded&&numVal;
+    return '<div style                                          = "display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:10px;background:'+(ok?'#F0FDF4':d.req?'#FEF2F2':'var(--off)')+';border:1px solid '+(ok?'#BBF7D0':d.req?'#FECACA':'var(--border)')+'"><span style="font-size:1rem">'+(ok?'✅':d.req?'❌':'⬜')+'</span><div><div style="font-size:.8rem;font-weight:700;color:'+(ok?'var(--success)':d.req?'var(--error)':'var(--mid)')+'">'+d.label+'</div><div style="font-size:.68rem;color:var(--mid)">'+(ok?'Uploaded':'Not uploaded')+'</div></div></div>';
+  }).join('')+'</div>';
+}
+window.saveDocs=()=>{
+  const gstNum                                                  = document.getElementById('d-gst-num').value.trim();
+  if(gstNum&&gstNum.length!==15){smsg('doc-err','⚠ GST Number must be exactly 15 characters.','err');return;}
+  const docs                                                    = {..._uploadedDocs,'_gst-num':gstNum,'_gst-date':document.getElementById('d-gst-date').value,'_shop-reg-num':document.getElementById('d-shop-reg-num').value.trim(),'_shop-reg-expiry':document.getElementById('d-shop-reg-expiry').value,savedAt:now()};
+  smsg('doc-ok','⏳ Saving…');
+  if(!vs){smsg('doc-err','⚠ Save shop details first.','err');return;}
+  shopsCol().doc(cu.id).update({docs}).then(()=>{if(!vs)vs={};vs.docs=docs;updateDocVerifyStrip();smsg('doc-ok','✅ Documents saved!');toast('Documents saved! 📄');}).catch(e=>smsg('doc-err','❌ '+e.message,'err'));
+};
+
+// ── Products ─────────────────────────────────────────────────────
+function subscribeToProducts(){
+  if(!cu)return;if(prodUnsubscribe)prodUnsubscribe();
+  prodUnsubscribe=productsCol().where('vendorId','==',cu.id).onSnapshot(snap=>{
+    _allProducts                                                = [];snap.forEach(d=>_allProducts.push({id:d.id,...d.data()}));
+    renderProducts(_allProducts);updateStats(_allProducts);renderStockAlerts(_allProducts);
+  },e=>console.error(e));
+}
+const catEmoji                                                  = c=>({'Groceries':'🛒','Fruits & Vegetables':'🍎','Dairy & Eggs':'🥛','Snacks & Beverages':'🍿','Electronics':'📱','Fashion & Clothing':'👗','Home & Kitchen':'🍳','Medical & Health':'💊','Sports & Fitness':'⚽','Kids & Toys':'🧸','Books & Stationery':'📚','Meat & Seafood':'🥩','Bakery & Sweets':'🍮'}[c]||'📦');
+function stockColor(s,max){const pct                            = s/Math.max(max||100,1);if(s===0)return '#E53E3E';if(pct<0.2)return '#D97706';return '#0EA66B';}
+function renderProducts(list){
+  const el                                                      = document.getElementById('prod-list');
+  if(!list.length){el.innerHTML='<div class="empty-state"><div class="es-ic">📦</div><div class="es-t">No products yet</div><div class="es-s">Go to Add Product to list your first item.</div></div>';return;}
+  el.innerHTML='<div class="prod-grid">'+list.map(p=>{
+    const s                                                     = parseInt(p.stock)||0;const pct=Math.min(100,Math.round(s/(p.maxStock||Math.max(s,100))*100));const sc=stockColor(s,p.maxStock||100);
+    const stockLabel                                            = s===0?'<span style="color:var(--error);font-weight:700;font-size:.65rem">OUT OF STOCK</span>':s<=5?'<span style="color:var(--warn);font-size:.65rem">⚠ Low: '+s+' left</span>':'<span style="color:var(--mid);font-size:.65rem">Stock: '+s+'</span>';
+    return '<div class                                          = "prod-card">'+
+      (p.image?'<img class                                      = "prod-img" src="'+p.image+'" alt="'+p.name+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">':'')+
+      '<div class                                               = "prod-ph" style="'+(p.image?'display:none':'')+'">'+catEmoji(p.category)+'</div>'+
+      '<div class                                               = "prod-info"><div class="prod-name">'+p.name+'</div><div class="prod-price">₹'+p.price+'</div><div class="prod-cat">'+p.category+'</div></div>'+
+      '<div class                                               = "prod-stock-bar"><div class="prod-stock-fill" style="width:'+pct+'%;background:'+sc+'"></div></div>'+
+      '<div style                                               = "padding:0 13px 6px;display:flex;justify-content:space-between;align-items:center">'+stockLabel+'</div>'+
+      '<div class                                               = "prod-actions"><button class="btn-restock" onclick="openRestockModal(\''+p.id+'\',\''+p.name.replace(/'/g,"\\'")+'\',' +s+')">📦 Restock</button><button class="btn-del" onclick="delProduct(\''+p.id+'\')">🗑 Delete</button></div></div>';
+  }).join('')+'</div>';
+}
+function renderStockAlerts(list){
+  const alerts=[
+    ...list.filter(p=>parseInt(p.stock)===0).map(p=>'<div class="stock-alert out"><span class="sa-icon">🔴</span><div><div class="sa-text out">Out of Stock: '+p.name+'</div><div style="font-size:.7rem;color:var(--mid)">Restock immediately</div></div></div>'),
+    ...list.filter(p=>parseInt(p.stock)>0&&parseInt(p.stock)<=5).map(p=>'<div class="stock-alert low"><span class="sa-icon">🟡</span><div><div class="sa-text low">Low Stock: '+p.name+' ('+p.stock+' left)</div></div></div>')
+  ];
+  ['stock-alerts-wrap','stock-alerts-prod-wrap'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=alerts.join('');});
+}
+function updateStats(list){
+  document.getElementById('st-p').textContent=list.length;
+  document.getElementById('st-s').textContent=list.filter(p=>parseInt(p.stock)>0).length;
+  if(!document.getElementById('st-st').innerHTML.includes('Live'))
+    document.getElementById('st-st').textContent=vs?'🟢 Live':'⚪ Setup';
+  const onlineCount                                             = _allPartners.filter(p=>p.isOnline).length;
+  document.getElementById('st-dp').textContent=onlineCount;
+}
+window.delProduct                                               = id=>{if(!confirm('Delete this product?'))return;productsCol().doc(id).delete().then(()=>toast('Product deleted','err')).catch(e=>toast('Delete failed: '+e.message,'err'));};
+window.openRestockModal                                         = (id,name,cur)=>{_restockProductId=id;document.getElementById('restock-modal-sub').textContent='"'+name+'" — Current stock: '+cur;document.getElementById('restock-qty').value='';document.getElementById('restock-modal').classList.add('show');};
+window.closeRestockModal                                        = ()=>{document.getElementById('restock-modal').classList.remove('show');_restockProductId=null;};
+window.confirmRestock=()=>{
+  const qty                                                     = parseInt(document.getElementById('restock-qty').value);
+  if(isNaN(qty)||qty<0){toast('Enter a valid quantity','err');return;}
+  if(!_restockProductId)return;
+  productsCol().doc(_restockProductId).update({stock            : qty,maxStock:Math.max(qty,100)}).then(()=>{toast('Stock updated to '+qty+' ✅');closeRestockModal();}).catch(e=>toast('Update failed: '+e.message,'err'));
+};
+window.addProduct=()=>{
+  if(!vs){smsg('prod-err','⚠ Complete your shop setup first.','err');return;}
+  const name                                                    = document.getElementById('p-name').value.trim();const price=document.getElementById('p-price').value;const cat=document.getElementById('p-cat').value;const stock=document.getElementById('p-stock').value;const img=document.getElementById('p-img').value.trim();const desc=document.getElementById('p-desc').value.trim();
+  if(!name||!price||!cat||!stock){smsg('prod-err','⚠ Name, price, category and stock required.','err');return;}
+  const qty                                                     = parseInt(stock);
+  productsCol().add({name,price                                 : parseFloat(price),category:cat,stock:qty,maxStock:Math.max(qty,100),image:img,desc,shopName:vs.name,shopId:cu.id,shopLat:vs.lat,shopLng:vs.lng,vendorId:cu.id,vendorName:cu.name,vendorEmail:cu.email,rating:4.5,createdAt:now()})
+  .then(()=>{smsg('prod-ok','✅ Product added & live!');toast('Product live! 🎉');clearProdForm();goPanel('products');}).catch(e=>smsg('prod-err','❌ '+e.message,'err'));
+};
+window.clearProdForm                                            = ()=>{['p-name','p-price','p-cat','p-stock','p-img','p-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('img-prev').classList.remove('show');document.getElementById('img-ph').style.display='flex';};
+window.previewImg                                               = ()=>{const u=document.getElementById('p-img').value.trim();const pr=document.getElementById('img-prev');const ph=document.getElementById('img-ph');if(u){pr.src=u;pr.classList.add('show');ph.style.display='none';}else{pr.classList.remove('show');ph.style.display='flex';}};
+
+// ── Delivery Partners Listener ────────────────────────────────────
+function subscribeToPartners(){
+  if(partnersUnsubscribe)partnersUnsubscribe();
+  partnersUnsubscribe=db.collection('delivery_partners').onSnapshot(snap=>{
+    _allPartners                                                = [];snap.forEach(d=>_allPartners.push({id:d.id,...d.data()}));
+    renderPartnersPanel();updateStats(_allProducts);
+  },e=>console.error('Partners error:',e));
+}
+
+function renderPartnersPanel(){
+  const online                                                  = _allPartners.filter(p=>p.isOnline);
+  const busy                                                    = _allPartners.filter(p=>p.activeOrderId);
+  document.getElementById('dp-online-count').textContent=online.length;
+  document.getElementById('dp-total-count').textContent=_allPartners.length;
+  document.getElementById('dp-active-count').textContent=busy.length;
+  const grid                                                    = document.getElementById('partners-grid');
+  if(!_allPartners.length){
+    grid.innerHTML                                              = '<div class="empty-state"><div class="es-ic">🛵</div><div class="es-t">No partners yet</div><div class="es-s">Partners register via the Delivery Partner app.</div></div>';
+    return;
+  }
+  const sorted                                                  = [..._allPartners].sort((a,b)=>(b.isOnline?1:0)-(a.isOnline?1:0));
+  grid.innerHTML=sorted.map(p=>{
+    const vehicleEmoji                                          = p.vehicle==='bicycle'?'🚲':'🛵';
+    const dist                                                  = (vs&&vs.lat&&p.lat)?haversineKm(vs.lat,vs.lng,p.lat,p.lng):null;
+    return `<div class="dp-card ${p.isOnline?'online':''}">
+      <div class                                                = "dp-online-dot ${p.isOnline?'online':''}"></div>
+      <div class                                                = "dp-card-av">${p.photo?`<img src="${p.photo}" alt="">`:((p.firstName||'?')[0].toUpperCase())}</div>
+      <div class                                                = "dp-card-name">${p.firstName||''} ${p.lastName||''}</div>
+      <div class                                                = "dp-card-meta">${vehicleEmoji} ${p.vehicle||'Bike'} &nbsp;·&nbsp; ⭐ ${(p.rating||5.0).toFixed(1)}</div>
+      ${dist!==null?`<div style="font-size:.68rem;color:var(--mid);margin-top:3px">📍 ${distLabel(dist)}</div>`:''}
+      ${p.activeOrderId?'<div style                             = "font-size:.68rem;font-weight:700;color:var(--orange);margin-top:3px">📦 On delivery</div>':p.isOnline?'<div style="font-size:.68rem;font-weight:700;color:var(--success);margin-top:3px">✅ Available</div>':'<div style="font-size:.68rem;color:var(--mid);margin-top:3px">⚫ Offline</div>'}
+      <div class                                                = "dp-card-stats">
+        <div><div class                                         = "dp-stat-v">${p.completedOrders||0}</div><div class="dp-stat-l">Deliveries</div></div>
+        <div><div class                                         = "dp-stat-v">₹${p.totalEarnings||0}</div><div class="dp-stat-l">Earned</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Assign Partner ────────────────────────────────────────────────
+window.openAssignModal=async(orderId)=>{
+  _assignOrderId                                                = orderId;
+  const order                                                   = _vendorOrders.find(o=>o.id===orderId);
+  document.getElementById('assign-modal-sub').textContent=order?'Assigning delivery for: '+order.productName:'Select a nearby online partner.';
+  document.getElementById('assign-modal-partners').innerHTML=`
+    <div style                                                  = "text-align:center;padding:20px">
+      <div style                                                = "width:26px;height:26px;border:3px solid rgba(247,147,30,.2);border-top-color:var(--orange);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px"></div>
+      <div style                                                = "font-size:.82rem;color:var(--mid)">Loading nearby partners…</div>
+    </div>`;
+  document.getElementById('assign-modal').classList.add('show');
+  try{
+    const snap                                                  = await db.collection('delivery_partners').where('isOnline','==',true).get();
+    const available                                             = [];
+    snap.forEach(d=>{
+      const p                                                   = {id:d.id,...d.data()};
+      if(!p.activeOrderId){
+        const shopLat                                           = vs?.lat||11.0168,shopLng=vs?.lng||76.9558;
+        p.dist                                                  = (p.lat&&p.lng)?haversineKm(shopLat,shopLng,p.lat,p.lng):999;
+        available.push(p);
+      }
+    });
+    available.sort((a,b)=>a.dist-b.dist);
+    if(!available.length){
+      document.getElementById('assign-modal-partners').innerHTML='<div style="text-align:center;padding:22px;color:var(--mid);font-size:.84rem">😔 No delivery partners are online nearby right now.<br><br>Partners come online via the Delivery Partner app.</div>';
+      return;
+    }
+    document.getElementById('assign-modal-partners').innerHTML=available.map(p=>{
+      const veh                                                 = p.vehicle==='bicycle'?'🚲':'🛵';
+      const isFar                                               = p.dist>3;
+      return `<div class="partner-row" onclick="assignPartnerToOrder('${p.id}','${(p.firstName||'')+' '+(p.lastName||'')}','${p.phone||''}','${p.vehicle||'bike'}')">
+        <div class                                              = "partner-av">${p.photo?`<img src="${p.photo}" alt="">`:((p.firstName||'?')[0].toUpperCase())}</div>
+        <div class                                              = "partner-info">
+          <div class                                            = "partner-name">${p.firstName||''} ${p.lastName||''}</div>
+          <div class                                            = "partner-meta">
+            <span>${veh} ${p.vehicle||'Bike'}</span>
+            <span>⭐ ${(p.rating||5.0).toFixed(1)}</span>
+            <span class                                         = "partner-dist-badge ${isFar?'far':''}">${p.dist<1?(p.dist*1000).toFixed(0)+' m':p.dist.toFixed(1)+' km'}</span>
+          </div>
+        </div>
+        <button class                                           = "btn-assign-now">Assign →</button>
+      </div>`;
+    }).join('');
+  }catch(e){
+    document.getElementById('assign-modal-partners').innerHTML='<div style="color:var(--error);padding:12px">Error: '+e.message+'</div>';
+  }
+};
+
+window.assignPartnerToOrder=async(partnerId,partnerName,partnerPhone,partnerVehicle)=>{
+  if(!_assignOrderId||!vs)return;
+  const order                                                   = _vendorOrders.find(o=>o.id===_assignOrderId);
+  if(!order){toast('Order not found','err');return;}
+  try{
+    const vehEmoji                                              = partnerVehicle==='bicycle'?'🚲':'🛵';
+    await db.collection('orders').doc(_assignOrderId).update({
+      deliveryPartnerId                                         : partnerId,
+      deliveryPartnerName                                       : partnerName.trim(),
+      deliveryPartnerPhone                                      : partnerPhone,
+      deliveryPartnerVehicle                                    : partnerVehicle,
+      deliveryPartnerVehicleEmoji                               : vehEmoji,
+      status                                                    : 'Ready for Pickup',
+      assignedAt                                                : now(),
+      shopLat                                                   : vs.lat||0,
+      shopLng                                                   : vs.lng||0,
+      shopAddress                                               : vs.address||'',
+      shopPhone                                                 : vs.phone||'',
+      shopName                                                  : vs.name||''
+    });
+    await db.collection('delivery_partners').doc(partnerId).update({activeOrderId:_assignOrderId});
+    toast('🛵 '+partnerName.trim()+' assigned successfully!');
+    closeAssignModal();
+  }catch(e){toast('Assignment failed: '+e.message,'err');}
+};
+
+window.closeAssignModal                                         = ()=>{document.getElementById('assign-modal').classList.remove('show');_assignOrderId=null;};
+
+// ── Orders ────────────────────────────────────────────────────────
+const ORDER_STEPS                                               = ['Confirmed','Packed','Ready for Pickup','Picked Up','Out for Delivery','Delivered'];
+const STATUS_CLASSES                                            = {'Confirmed':'sp-confirmed','Packed':'sp-packed','Ready for Pickup':'sp-ready','Picked Up':'sp-picked','Out for Delivery':'sp-out','Delivered':'sp-delivered','Cancelled':'sp-cancelled'};
+const STATUS_ICONS                                              = {'Confirmed':'📋','Packed':'📦','Ready for Pickup':'🛵','Picked Up':'🤝','Out for Delivery':'🏃','Delivered':'✅','Cancelled':'❌'};
+
+function loadOrders(){
+  if(!cu)return;
+  db.collection('orders').where('shopId','==',cu.id).onSnapshot(snap=>{
+    _vendorOrders                                               = [];snap.forEach(d=>_vendorOrders.push({id:d.id,...d.data()}));
+    _vendorOrders.sort((a,b)=>new Date(b.orderedAt)-new Date(a.orderedAt));
+    renderOrdersPanel();renderRevenuePanel();
+    const hasNew                                                = _vendorOrders.some(o=>o.status==='Confirmed');
+    const dot                                                   = document.getElementById('new-orders-dot');if(dot)dot.style.display=hasNew?'inline-block':'none';
+  },e=>console.error(e));
+}
+
+function buildStepper(status){
+  if(status==='Cancelled')return '<div style="display:flex;align-items:center;gap:7px;padding:6px 10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;font-size:.74rem;font-weight:700;color:var(--error)">❌ Order Cancelled</div>';
+  const currentIdx                                              = ORDER_STEPS.indexOf(status);let html='<div class="order-stepper">';
+  ORDER_STEPS.forEach((step,i)=>{
+    const done                                                  = i<currentIdx,active=i===currentIdx;
+    const lbl                                                   = step==='Ready for Pickup'?'Ready':step==='Out for Delivery'?'Out for Del.':step;
+    if(i>0)html+='<div class="os-line'+(done?' done':'')+'"></div>';
+    html                                                        += '<div class="os-step"><div class="os-dot'+(done?' done':active?' active':'')+'">'+( done?'✓':i+1)+'</div><div class="os-label'+(done?' done':active?' active':'')+'">'+lbl+'</div></div>';
+  });
+  return html+'</div>';
+}
+
+function nextStatus(current){
+  if(current==='Packed')return null;
+  const idx                                                     = ORDER_STEPS.indexOf(current);
+  if(idx===-1||idx>=ORDER_STEPS.length-1)return null;
+  return ORDER_STEPS[idx+1];
+}
+
+window.advanceOrder=(orderId,currentStatus,productId,qty)=>{
+  const next                                                    = nextStatus(currentStatus);if(!next){toast('Use Assign Partner for this step','info');return;}
+  const update                                                  = {status:next,['statusAt_'+next.replace(/\s+/g,'_')]:now()};
+  if(next==='Delivered'&&productId){productsCol().doc(productId).get().then(doc=>{if(doc.exists){const cur=parseInt(doc.data().stock)||0;productsCol().doc(productId).update({stock:Math.max(0,cur-qty)});}});}
+  db.collection('orders').doc(orderId).update(update).then(()=>toast('Order → '+next+' '+(STATUS_ICONS[next]||''))).catch(e=>toast('Update failed: '+e.message,'err'));
+};
+
+window.cancelOrder=orderId=>{
+  if(!confirm('Cancel this order?'))return;
+  db.collection('orders').doc(orderId).update({status:'Cancelled',cancelledAt:now()}).then(()=>toast('Order cancelled ❌','err')).catch(e=>toast('Failed: '+e.message,'err'));
+};
+
+function renderOrdersPanel(){
+  const statusFilter                                            = document.getElementById('order-filter-status')?.value||'';
+  const sort                                                    = document.getElementById('order-filter-sort')?.value||'desc';
+  const payFilter                                               = document.getElementById('order-filter-pay')?.value||'';
+
+  let list                                                      = _vendorOrders.slice();
+  if(statusFilter)list=list.filter(o=>o.status===statusFilter);
+  if(payFilter)list=list.filter(o=>(o.paymentMethod||'cod')===payFilter);
+  if(sort==='asc')list.reverse();
+
+  document.getElementById('orders-count-lbl').textContent=list.length+' order'+(list.length!==1?'s':'');
+  const container                                               = document.getElementById('orders-container');
+
+  if(!list.length){
+    container.innerHTML                                         = '<div class="card"><div class="empty-state"><div class="es-ic">📋</div><div class="es-t">No orders yet</div><div class="es-s">Share your shop link to get started!</div></div></div>';
+    return;
+  }
+
+  container.innerHTML=list.map((o,i)=>{
+    const isFinal                                               = o.status==='Delivered'||o.status==='Cancelled';
+    const isPacked                                              = o.status==='Packed';
+    const isConfirmed                                           = o.status==='Confirmed';
+    const isAssigned                                            = !!o.deliveryPartnerId;
+    const next                                                  = nextStatus(o.status);
+    const isCod                                                 = (o.paymentMethod||'cod')==='cod';
+
+    // Assign partner button for Packed orders
+    const assignBtn                                             = isPacked?`<button class="status-advance-btn assign" onclick="openAssignModal('${o.id}')">🛵 Assign Delivery Partner</button>`:'';
+    const advanceBtn                                            = (isConfirmed&&next)?`<button class="status-advance-btn advance" onclick="advanceOrder('${o.id}','${o.status}','${o.productId||''}',${o.qty||1})">📦 Mark Packed</button>`:'';
+    const cancelBtn                                             = (!isFinal)?`<button class="status-advance-btn cancel" onclick="cancelOrder('${o.id}')">✕ Cancel</button>`:'';
+
+    const partnerChip                                           = isAssigned&&!isFinal?`
+      <div class                                                = "partner-assigned-chip">
+        <div class                                              = "pac-av">${(o.deliveryPartnerVehicleEmoji||'🛵')}</div>
+        <span class                                             = "pac-text">${o.deliveryPartnerName||'Partner'}</span>
+        <span class                                             = "pac-vehicle">&nbsp;·&nbsp;${o.deliveryPartnerPhone||''}</span>
+      </div>`:'';
+
+    return `<div class="card" style="margin-bottom:12px;padding:16px">
+      <div style                                                = "display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div style                                              = "display:flex;align-items:center;gap:10px">
+          <div style                                            = "font-family:var(--disp);font-size:.7rem;font-weight:800;color:var(--mid)">#${i+1}</div>
+          <div>
+            <div style                                          = "font-weight:700;font-size:.92rem">${o.productName}</div>
+            <div style                                          = "font-size:.72rem;color:var(--mid)">${o.category} · Qty: ${o.qty} · <span style="color:var(--orange);font-weight:700">₹${o.total}</span></div>
+          </div>
+        </div>
+        <div style                                              = "display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <span class                                           = "status-pill ${STATUS_CLASSES[o.status]||'sp-confirmed'}">${STATUS_ICONS[o.status]||''} ${o.status}</span>
+          <span class                                           = "pay-pill ${isCod?'pay-pill-cod':'pay-pill-online'}">${isCod?'💵 COD':'💳 Online'}</span>
+          <div style                                            = "font-size:.72rem;color:var(--mid)">${new Date(o.orderedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div>
+        </div>
+      </div>
+      ${buildStepper(o.status)}
+      ${partnerChip}
+      ${codReminder(o)}
+      <div style                                                = "display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;padding:10px;background:var(--off);border-radius:10px">
+        <div><div style                                         = "font-size:.62rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em">Customer Phone</div><div style="font-size:.8rem;font-weight:600;margin-top:2px">${o.phone||'—'}</div></div>
+        <div><div style                                         = "font-size:.62rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em">Delivery Address</div><div style="font-size:.78rem;font-weight:500;margin-top:2px;line-height:1.4">${o.deliveryAddress||'—'}</div></div>
+        <div>${payInfoBlock(o)}</div>
+        <div><div style                                         = "font-size:.62rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em">Ordered At</div><div style="font-size:.8rem;font-weight:600;margin-top:2px">${new Date(o.orderedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div></div>
+      </div>
+      <div style                                                = "display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;align-items:center">
+        ${advanceBtn}${assignBtn}${cancelBtn}
+        ${isFinal?`<div style="font-size:.74rem;color:var(--mid);font-style:italic">${o.status==='Delivered'?'✅ Order completed':'❌ Order cancelled'}</div>`:''}
+        ${o.status==='Ready for Pickup'||o.status==='Picked Up'||o.status==='Out for Delivery'?`<div style="font-size:.72rem;color:var(--mid)">⏳ Partner is handling delivery…</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRevenuePanel(){
+  const confirmed                                               = _vendorOrders.filter(o=>o.status!=='Cancelled');
+  const total                                                   = confirmed.reduce((s,o)=>s+o.total,0);
+  const avg                                                     = confirmed.length?Math.round(total/confirmed.length):0;
+
+  // COD pending: active COD orders not yet delivered
+  const codPending                                              = _vendorOrders.filter(o=>o.status!=='Cancelled'&&o.status!=='Delivered'&&(o.paymentMethod||'cod')==='cod').reduce((s,o)=>s+o.total,0);
+  const codTotal                                                = confirmed.filter(o=>(o.paymentMethod||'cod')==='cod').length;
+  const onlineTotal                                             = confirmed.filter(o=>o.paymentMethod==='online').length;
+
+  document.getElementById('rv-total').textContent='₹'+total.toLocaleString('en-IN');
+  document.getElementById('rv-orders').textContent=confirmed.length;
+  document.getElementById('rv-cod').textContent='₹'+codPending.toLocaleString('en-IN');
+  document.getElementById('rv-avg').textContent='₹'+avg.toLocaleString('en-IN');
+
+  // Payment breakdown card
+  const pbEl                                                    = document.getElementById('rev-pay-breakdown');
+  if(pbEl){
+    pbEl.innerHTML                                              = `
+      <div style                                                = "flex:1;min-width:180px;padding:14px 16px;background:#FFF8E7;border:1px solid #FDE68A;border-radius:12px">
+        <div style                                              = "font-size:1.1rem;margin-bottom:6px">💵</div>
+        <div style                                              = "font-family:var(--disp);font-size:1.3rem;font-weight:800;color:#D97706">${codTotal}</div>
+        <div style                                              = "font-size:.72rem;color:var(--mid);font-weight:600;margin-top:2px">Cash on Delivery orders</div>
+        <div style                                              = "font-size:.7rem;color:#D97706;font-weight:700;margin-top:6px">₹${codPending.toLocaleString('en-IN')} pending collection</div>
+      </div>
+      <div style                                                = "flex:1;min-width:180px;padding:14px 16px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px">
+        <div style                                              = "font-size:1.1rem;margin-bottom:6px">💳</div>
+        <div style                                              = "font-family:var(--disp);font-size:1.3rem;font-weight:800;color:#1d4ed8">${onlineTotal}</div>
+        <div style                                              = "font-size:.72rem;color:var(--mid);font-weight:600;margin-top:2px">Online Payment orders</div>
+        <div style                                              = "font-size:.7rem;color:#1d4ed8;font-weight:700;margin-top:6px">₹${confirmed.filter(o=>o.paymentMethod==='online').reduce((s,o)=>s+o.total,0).toLocaleString('en-IN')} received</div>
+      </div>`;
+  }
+
+  const byProd                                                  = {};confirmed.forEach(o=>{byProd[o.productName]=(byProd[o.productName]||0)+o.total;});
+  const prodList                                                = Object.entries(byProd).sort((a,b)=>b[1]-a[1]).slice(0,6);const maxRev=prodList.length?prodList[0][1]:1;
+  document.getElementById('rev-by-product').innerHTML=prodList.length?prodList.map(([name,rev])=>'<div style="display:flex;align-items:center;gap:10px"><div style="font-size:.82rem;font-weight:600;min-width:140px;flex-shrink:0">'+name+'</div><div style="flex:1;background:var(--off);border-radius:30px;height:10px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--orange),var(--orange-dark));border-radius:30px;width:'+Math.round(rev/maxRev*100)+'%;transition:width .6s ease"></div></div><div style="font-family:var(--disp);font-size:.82rem;font-weight:800;color:var(--orange);min-width:60px;text-align:right">₹'+rev.toLocaleString('en-IN')+'</div></div>').join(''):'<div style="color:var(--mid);font-size:.85rem">No revenue data yet.</div>';
+
+  const days                                                    = [];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const key=d.toISOString().slice(0,10);const lbl=d.toLocaleDateString('en-IN',{weekday:'short'});const rev=confirmed.filter(o=>o.orderedAt.slice(0,10)===key).reduce((s,o)=>s+o.total,0);days.push({lbl,rev});}
+  const maxDay                                                  = Math.max(...days.map(d=>d.rev),1);
+  document.getElementById('rev-chart').innerHTML=days.map(d=>'<div class="chart-bar-col"><div style="font-size:.65rem;color:var(--orange);font-weight:700;height:16px;display:flex;align-items:center">'+(d.rev?'₹'+d.rev:'')+'</div><div class="chart-bar" style="height:'+Math.round(d.rev/maxDay*90)+'px"></div><div class="chart-bar-lbl">'+d.lbl+'</div></div>').join('');
+}
+
+window.downloadPDF=()=>{
+  if(!_vendorOrders.length){toast('No orders to download','err');return;}
+  const confirmed                                               = _vendorOrders.filter(o=>o.status!=='Cancelled');const total=confirmed.reduce((s,o)=>s+o.total,0);
+  const shopName                                                = vs&&vs.name?vs.name:'—';
+  const rows=_vendorOrders.map((o,i)=>{
+    const isCod                                                 = (o.paymentMethod||'cod')==='cod';
+    const payStyle                                              = isCod?'color:#D97706;font-weight:700':'color:#1d4ed8;font-weight:700';
+    return ['<tr>','<td>'+(i+1)+'<\/td>','<td style="font-weight:600">'+o.productName+'<\/td>','<td>'+o.qty+'<\/td>','<td style="color:#FF6B1A;font-weight:700">₹'+o.total+'<\/td>','<td style="'+payStyle+'">'+(isCod?'💵 COD':'💳 Online')+'<\/td>','<td>'+(o.phone||'—')+'<\/td>','<td>'+(o.deliveryAddress||'—')+'<\/td>','<td>'+(o.deliveryPartnerName||'Unassigned')+'<\/td>','<td>'+o.status+'<\/td>','<td>'+new Date(o.orderedAt).toLocaleDateString('en-IN')+'<\/td>','<\/tr>'].join('');
+  }).join('');
+  const html                                                    = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>LocalShore Orders — '+shopName+'<\/title><style>body{font-family:system-ui,sans-serif;padding:32px;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#0B2D6B;color:#fff;padding:9px 6px;text-align:left;font-size:11px}tr:nth-child(even){background:#f9f9f9}td{padding:8px 6px;border-bottom:1px solid #eee}@media print{.no-print{display:none}}<\/style><\/head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px"><div><h1 style="font-size:20px;margin-bottom:4px">LocalShore — Order Report<\/h1><div style="font-size:13px;color:#888">Shop: <b>'+shopName+'<\/b> · Generated: '+new Date().toLocaleString('en-IN')+'<\/div><\/div><button class="no-print" onclick="window.print()" style="padding:9px 22px;background:#FF6B1A;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Print / Save PDF<\/button><\/div><table><thead><tr><th>#<\/th><th>Product<\/th><th>Qty<\/th><th>Total<\/th><th>Payment<\/th><th>Phone<\/th><th>Delivery Address<\/th><th>Partner<\/th><th>Status<\/th><th>Date<\/th><\/tr><\/thead><tbody>'+rows+'<\/tbody><\/table><\/body><\/html>';
+  const blob                                                    = new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);window.open(url,'_blank');toast('PDF ready — click Print / Save PDF');
+};
+
+window.goPanel=n=>{
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  const idx                                                     = {overview:0,shop:1,documents:2,products:3,add:4,orders:5,partners:6,revenue:7}[n];
+  if(idx!==undefined)document.querySelectorAll('.sb-item')[idx].classList.add('active');
+  if(n==='shop')setTimeout(()=>{if(map)map.invalidateSize();else initMap();},100);
+  if(n==='orders'||n==='revenue'){if(!_vendorOrders.length)loadOrders();}
+  if(n==='documents'){updateDocVerifyStrip();}
+  if(n==='partners'){renderPartnersPanel();}
+};
+</script>
+</body>
+</html>
